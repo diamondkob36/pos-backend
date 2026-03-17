@@ -47,4 +47,33 @@ export class AppService {
       },
     });
   }
+  // ==========================================
+  // 🌟 ระบบ Admin: จัดการสินค้า (CRUD)
+  // ==========================================
+
+  // 1. สร้างสินค้าใหม่ (Create)
+  async createProduct(data: { name: string; price: number; image: string }) {
+    return this.prisma.product.create({
+      data: {
+        name: data.name,
+        price: data.price,
+        image: data.image,
+      },
+    });
+  }
+
+  // 2. แก้ไขสินค้า (Update)
+  async updateProduct(id: number, data: { name?: string; price?: number; image?: string }) {
+    return this.prisma.product.update({
+      where: { id: id },
+      data: data,
+    });
+  }
+
+  // 3. ลบสินค้า (Delete)
+  async deleteProduct(id: number) {
+    return this.prisma.product.delete({
+      where: { id: id },
+    });
+  }
 }
