@@ -17,4 +17,10 @@ export class AppController {
     // รับข้อมูลจากหน้าบ้าน แล้วส่งให้ Service ทำงานต่อ
     return this.appService.createOrder(body.items);
   }
+
+  // 🌟 API ใหม่: ดึงข้อมูลประวัติยอดขาย (ใช้ GET)
+  @Get('orders')
+  async getOrders() {
+    return this.appService.getOrders();
+  }
 }

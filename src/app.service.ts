@@ -32,4 +32,19 @@ export class AppService {
 
     return newOrder;
   }
+
+  async getOrders() {
+    return this.prisma.order.findMany({
+      orderBy: {
+        createdAt: 'desc', // เรียงลำดับวันที่ จากใหม่สุด (descending) ไปเก่าสุด
+      },
+      include: {
+        items: {
+          include: {
+            product: true, // ดึงข้อมูลชื่อสินค้า/รูปภาพ จากตาราง Product มาด้วย
+          },
+        },
+      },
+    });
+  }
 }
