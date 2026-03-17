@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- เริ่มพิมพ์เขียวตาราง ---
+
+// พิมพ์เขียวสำหรับตารางสินค้า
+model Product {
+  id         Int         @id @default(autoincrement())
+  name       String
+  price      Float
+  image      String
+  orderItems OrderItem[] // เชื่อมไปยังรายการในบิล
+}
+
+// พิมพ์เขียวสำหรับหัวบิล (ยอดรวม, วันที่)
+model Order {
+  id          Int         @id @default(autoincrement())
+  totalAmount Float
+  createdAt   DateTime    @default(now())
+  items       OrderItem[]
+}
+
+// พิมพ์เขียวสำหรับรายการสินค้าในแต่ละบิล (ซื้ออะไรไปบ้าง จำนวนเท่าไหร่)
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Int
+  
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
