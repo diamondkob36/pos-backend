@@ -20,6 +20,7 @@ model Product {
 // พิมพ์เขียวสำหรับหัวบิล (ยอดรวม, วันที่)
 model Order {
   id          Int         @id @default(autoincrement())
+  dailyNumber Int         @default(1) // 🌟 ฟิลด์ใหม่: เลขบิล/เลขคิว ประจำวัน
   totalAmount Float
   createdAt   DateTime    @default(now())
   items       OrderItem[]

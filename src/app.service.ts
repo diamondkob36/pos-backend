@@ -17,9 +17,35 @@ export class AppService {
     // ก. คำนวณยอดรวมทั้งหมด (Total Amount)
     const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
+    // 🌟 🌟 🌟 เพิ่มระบบคำนวณเลขบิลประจำวัน 🌟 🌟 🌟
+    // 1. หาวันที่ปัจจุบัน (ตั้งเวลาให้เป็น 00:00:00 - 23:59:59 ของวันนี้)
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // 2. ค้นหาบิลล่าสุดของ "วันนี้" ในฐานข้อมูล
+    const lastOrderToday = await this.prisma.order.findFirst({
+      where: {
+        createdAt: {
+          gte: startOfDay, // มากกว่าหรือเท่ากับ เวลาเริ่มต้นของวัน
+          lte: endOfDay,   // น้อยกว่าหรือเท่ากับ เวลาสิ้นสุดของวัน
+        },
+      },
+      orderBy: {
+        dailyNumber: 'desc', // เรียงจากเลขคิวมากสุดไปน้อยสุด เพื่อเอาตัวบนสุด
+      },
+    });
+
+    // 3. กำหนดเลขคิวใหม่ (ถ้ามีบิลแล้วให้เอาเลขล่าสุด + 1, ถ้ายังไม่มีให้เริ่มที่ 1)
+    const newDailyNumber = lastOrderToday ? lastOrderToday.dailyNumber + 1 : 1;
+    // 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟
+
     // ข. สั่ง Prisma บันทึกข้อมูลลง 2 ตารางพร้อมกัน (Order + OrderItem)
     const newOrder = await this.prisma.order.create({
       data: {
+        dailyNumber: newDailyNumber, // 🌟 บันทึกเลขบิลประจำวันลงไปด้วย
         totalAmount: totalAmount,
         items: {
           create: items.map((item) => ({
@@ -47,6 +73,7 @@ export class AppService {
       },
     });
   }
+  
   // ==========================================
   // 🌟 ระบบ Admin: จัดการสินค้า (CRUD)
   // ==========================================
