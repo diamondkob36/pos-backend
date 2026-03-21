@@ -11,46 +11,45 @@ export class AppService {
   }
 
   // 2. ฟังก์ชันใหม่! สร้างบิลสั่งซื้อ 🛒
-  // สมมติว่าหน้าบ้านจะส่งข้อมูลมาเป็น array ของสินค้า เช่น [{ productId: 1, quantity: 2, price: 60 }]
-  async createOrder(items: { productId: number; quantity: number; price: number }[]) {
+  async createOrder(items: { 
+    productId: number; 
+    quantity: number; 
+    price: number;
+    size?: string;      // 🌟 รับค่าไซส์
+    toppings?: string;  // 🌟 รับค่าท็อปปิ้ง
+    note?: string;      // 🌟 รับค่าคอมเมนต์
+  }[]) {
     
-    // ก. คำนวณยอดรวมทั้งหมด (Total Amount)
+    // ก. คำนวณยอดรวมทั้งหมด (ใช้ price ที่ส่งมาจากหน้าบ้าน เพราะรวมค่าท็อปปิ้งมาแล้ว)
     const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    // 🌟 🌟 🌟 เพิ่มระบบคำนวณเลขบิลประจำวัน 🌟 🌟 🌟
-    // 1. หาวันที่ปัจจุบัน (ตั้งเวลาให้เป็น 00:00:00 - 23:59:59 ของวันนี้)
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
-    
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    // 2. ค้นหาบิลล่าสุดของ "วันนี้" ในฐานข้อมูล
     const lastOrderToday = await this.prisma.order.findFirst({
       where: {
-        createdAt: {
-          gte: startOfDay, // มากกว่าหรือเท่ากับ เวลาเริ่มต้นของวัน
-          lte: endOfDay,   // น้อยกว่าหรือเท่ากับ เวลาสิ้นสุดของวัน
-        },
+        createdAt: { gte: startOfDay, lte: endOfDay },
       },
-      orderBy: {
-        dailyNumber: 'desc', // เรียงจากเลขคิวมากสุดไปน้อยสุด เพื่อเอาตัวบนสุด
-      },
+      orderBy: { dailyNumber: 'desc' },
     });
 
-    // 3. กำหนดเลขคิวใหม่ (ถ้ามีบิลแล้วให้เอาเลขล่าสุด + 1, ถ้ายังไม่มีให้เริ่มที่ 1)
     const newDailyNumber = lastOrderToday ? lastOrderToday.dailyNumber + 1 : 1;
-    // 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟
 
-    // ข. สั่ง Prisma บันทึกข้อมูลลง 2 ตารางพร้อมกัน (Order + OrderItem)
+    // ข. สั่ง Prisma บันทึกข้อมูล
     const newOrder = await this.prisma.order.create({
       data: {
-        dailyNumber: newDailyNumber, // 🌟 บันทึกเลขบิลประจำวันลงไปด้วย
+        dailyNumber: newDailyNumber,
         totalAmount: totalAmount,
         items: {
           create: items.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,
+            price: item.price,       // 🌟 บันทึกราคาที่บวกท็อปปิ้งแล้ว
+            size: item.size || null,
+            toppings: item.toppings || null,
+            note: item.note || null,
           })),
         },
       },
@@ -74,33 +73,58 @@ export class AppService {
     });
   }
   
-  // ==========================================
+// ==========================================
   // 🌟 ระบบ Admin: จัดการสินค้า (CRUD)
   // ==========================================
 
-  // 1. สร้างสินค้าใหม่ (Create)
-  async createProduct(data: { name: string; price: number; image: string }) {
+  // 1. สร้างสินค้าใหม่ (เพิ่ม category)
+  async createProduct(data: { name: string; price: number; image: string; category?: string }) {
     return this.prisma.product.create({
       data: {
         name: data.name,
         price: data.price,
         image: data.image,
+        category: data.category || 'beverage', // ถ้าไม่ส่งมาให้ถือเป็นเครื่องดื่ม
       },
     });
   }
 
-  // 2. แก้ไขสินค้า (Update)
-  async updateProduct(id: number, data: { name?: string; price?: number; image?: string }) {
+  // 2. แก้ไขสินค้า (เพิ่ม category)
+  async updateProduct(id: number, data: { name?: string; price?: number; image?: string; category?: string }) {
     return this.prisma.product.update({
       where: { id: id },
       data: data,
     });
   }
 
-  // 3. ลบสินค้า (Delete)
+  // 3. ลบสินค้า 
   async deleteProduct(id: number) {
     return this.prisma.product.delete({
       where: { id: id },
     });
+  }
+
+  // ==========================================
+  // 🌟 ระบบ Admin: จัดการท็อปปิ้ง (Topping CRUD)
+  // ==========================================
+  async getToppings() {
+    return this.prisma.topping.findMany();
+  }
+
+  // 🌟 รองรับ image
+  async createTopping(data: { name: string; price: number; category: string; image?: string }) {
+    return this.prisma.topping.create({ data });
+  }
+
+  // 🌟 เพิ่มฟังก์ชันแก้ไข (Update)
+  async updateTopping(id: number, data: { name?: string; price?: number; category?: string; image?: string }) {
+    return this.prisma.topping.update({
+      where: { id: id },
+      data: data,
+    });
+  }
+
+  async deleteTopping(id: number) {
+    return this.prisma.topping.delete({ where: { id } });
   }
 }

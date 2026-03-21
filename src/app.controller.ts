@@ -35,4 +35,28 @@ export class AppController {
   async deleteProduct(@Param('id', ParseIntPipe) id: number) {
     return this.appService.deleteProduct(id);
   }
+
+  // ==========================================
+  // 🌟 API จัดการท็อปปิ้ง
+  // ==========================================
+  @Get('toppings')
+  getToppings() {
+    return this.appService.getToppings();
+  }
+
+  @Post('toppings')
+  createTopping(@Body() body: { name: string; price: number; category: string; image?: string }) {
+    return this.appService.createTopping(body);
+  }
+
+  // 🌟 เพิ่ม API เส้นนี้สำหรับแก้ไข (Edit)
+  @Put('toppings/:id')
+  updateTopping(@Param('id') id: string, @Body() body: { name?: string; price?: number; category?: string; image?: string }) {
+    return this.appService.updateTopping(Number(id), body);
+  }
+
+  @Delete('toppings/:id')
+  deleteTopping(@Param('id') id: string) {
+    return this.appService.deleteTopping(Number(id));
+  }
 }  

@@ -10,11 +10,23 @@ datasource db {
 
 // พิมพ์เขียวสำหรับตารางสินค้า
 model Product {
-  id         Int         @id @default(autoincrement())
-  name       String
-  price      Float
-  image      String
-  orderItems OrderItem[] // เชื่อมไปยังรายการในบิล
+  id        Int         @id @default(autoincrement())
+  name      String
+  price     Float
+  image     String
+  category  String      @default("beverage") // เพิ่มหมวดหมู่ (เช่น beverage, dessert)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  items     OrderItem[]
+}
+
+// 🌟 2. สร้างตารางใหม่สำหรับเก็บ Topping โดยเฉพาะ
+model Topping {
+  id        Int      @id @default(autoincrement())
+  name      String
+  price     Float
+  image     String?  // 🌟 เพิ่มช่องเก็บ URL รูปภาพ (ใส่ ? หมายถึงปล่อยว่างได้)
+  category  String   @default("beverage")
 }
 
 // พิมพ์เขียวสำหรับหัวบิล (ยอดรวม, วันที่)
@@ -26,13 +38,19 @@ model Order {
   items       OrderItem[]
 }
 
-// พิมพ์เขียวสำหรับรายการสินค้าในแต่ละบิล (ซื้ออะไรไปบ้าง จำนวนเท่าไหร่)
+// ข้อมูลสินค้าแต่ละชิ้นในบิล
 model OrderItem {
-  id        Int     @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   orderId   Int
   productId Int
   quantity  Int
   
-  order     Order   @relation(fields: [orderId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
+  // 🌟 4 ฟิลด์ที่เพิ่มเข้ามาใหม่สำหรับระบบคาเฟ่
+  price     Float    // ราคาสุทธิที่รวมไซส์และท็อปปิ้งแล้ว (แช่แข็งราคาไว้ในบิล)
+  size      String?  // ขนาดแก้ว (เช่น "ร้อน", "เย็น", "ปั่น")
+  toppings  String?  // ท็อปปิ้ง (เช่น "ไข่มุก, เยลลี่") เก็บเป็นข้อความยาวๆ
+  note      String?  // คอมเมนต์เพิ่มเติม (เช่น "หวานน้อย", "แยกน้ำ")
+
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
 }
