@@ -127,4 +127,26 @@ export class AppService {
   async deleteTopping(id: number) {
     return this.prisma.topping.delete({ where: { id } });
   }
+
+  // ==========================================
+  // 🌟 ระบบ Admin: จัดการหมวดหมู่ (Category CRUD)
+  // ==========================================
+  async getCategories() {
+    return this.prisma.category.findMany();
+  }
+
+  async createCategory(data: { value: string; label: string; hasType: boolean; hasSize: boolean }) {
+    return this.prisma.category.create({ data });
+  }
+
+  async updateCategory(id: number, data: { value?: string; label?: string; hasType?: boolean; hasSize?: boolean }) {
+    return this.prisma.category.update({
+      where: { id: id },
+      data: data,
+    });
+  }
+
+  async deleteCategory(id: number) {
+    return this.prisma.category.delete({ where: { id } });
+  }
 }

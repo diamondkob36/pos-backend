@@ -29,6 +29,15 @@ model Topping {
   category  String   @default("beverage")
 }
 
+// ตารางหมวดหมู่สินค้า
+model Category {
+  id        Int      @id @default(autoincrement())
+  value     String   @unique  // ค่าอ้างอิงภาษาอังกฤษ (เช่น beverage, dessert, food)
+  label     String            // ชื่อที่แสดงผล (เช่น เครื่องดื่ม, ขนมหวาน, อาหารคาว)
+  hasType   Boolean  @default(false) // หมวดหมู่นี้มีให้เลือก ร้อน/เย็น/ปั่น หรือไม่?
+  hasSize   Boolean  @default(false) // หมวดหมู่นี้มีให้เลือกขนาด (S, M, L) หรือไม่?
+}
+
 // พิมพ์เขียวสำหรับหัวบิล (ยอดรวม, วันที่)
 model Order {
   id          Int         @id @default(autoincrement())

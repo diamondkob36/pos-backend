@@ -59,4 +59,27 @@ export class AppController {
   deleteTopping(@Param('id') id: string) {
     return this.appService.deleteTopping(Number(id));
   }
+
+  // ==========================================
+  // 🌟 API จัดการหมวดหมู่ (Category)
+  // ==========================================
+  @Get('categories')
+  getCategories() {
+    return this.appService.getCategories();
+  }
+
+  @Post('categories')
+  createCategory(@Body() body: { value: string; label: string; hasType: boolean; hasSize: boolean }) {
+    return this.appService.createCategory(body);
+  }
+
+  @Put('categories/:id')
+  updateCategory(@Param('id') id: string, @Body() body: { value?: string; label?: string; hasType?: boolean; hasSize?: boolean }) {
+    return this.appService.updateCategory(Number(id), body);
+  }
+
+  @Delete('categories/:id')
+  deleteCategory(@Param('id') id: string) {
+    return this.appService.deleteCategory(Number(id));
+  }
 }  
