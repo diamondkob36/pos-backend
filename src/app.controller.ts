@@ -82,4 +82,23 @@ export class AppController {
   deleteCategory(@Param('id') id: string) {
     return this.appService.deleteCategory(Number(id));
   }
+
+  // 🌟 เส้นทางสำหรับ Login
+  @Post('login')
+  async login(@Body() body: { username: string; password: string }) {
+    return this.appService.login(body);
+  }
+
+  // 🌟 API จัดการพนักงาน
+  @Get('users')
+  getUsers() { return this.appService.getUsers(); }
+
+  @Post('users')
+  createUser(@Body() body: any) { return this.appService.createUser(body); }
+
+  @Put('users/:id')
+  updateUser(@Param('id') id: string, @Body() body: any) { return this.appService.updateUser(Number(id), body); }
+
+  @Delete('users/:id')
+  deleteUser(@Param('id') id: string) { return this.appService.deleteUser(Number(id)); }
 }  

@@ -149,4 +149,58 @@ export class AppService {
   async deleteCategory(id: number) {
     return this.prisma.category.delete({ where: { id } });
   }
+
+  // ==========================================
+  // 🌟 ระบบเข้าสู่ระบบ (Login)
+  // ==========================================
+  async login(data: { username: string; password: string }) {
+    // 💡 ท่าไม้ตาย: ถ้าเพิ่งเปิดระบบครั้งแรก และยังไม่มี User เลย ให้สร้างไอดีพื้นฐานให้ 2 อันอัตโนมัติ
+    const userCount = await this.prisma.user.count();
+    if (userCount === 0) {
+      await this.prisma.user.create({ data: { username: 'diamondkob36', password: 'diamondth', role: 'manager', name: 'ผู้จัดการร้าน' } });
+      await this.prisma.user.create({ data: { username: 'user', password: '123', role: 'cashier', name: 'พนักงานหน้าร้าน' } });
+    }
+
+    // ค้นหาพนักงานจาก username
+    const user = await this.prisma.user.findUnique({
+      where: { username: data.username },
+    });
+
+    // ถ้าไม่เจอ หรือรหัสผิด
+    if (!user || user.password !== data.password) {
+      return { success: false, message: 'รหัสผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง ❌' };
+    }
+
+    // ถ้าผ่าน ส่งข้อมูลพนักงานกลับไป (แต่ไม่ส่งรหัสผ่านกลับไปนะ เพื่อความปลอดภัย)
+    return { 
+      success: true, 
+      user: { id: user.id, username: user.username, role: user.role, name: user.name } 
+    };
+  }
+
+  // ==========================================
+  // 🌟 ระบบจัดการพนักงาน (User Management)
+  // ==========================================
+  async getUsers() {
+    // ดึงข้อมูลพนักงานทั้งหมด (แต่ไม่ดึงรหัสผ่านเพื่อความปลอดภัย)
+    return this.prisma.user.findMany({
+      select: { id: true, username: true, role: true, name: true }
+    });
+  }
+
+  async createUser(data: { username: string; password: string; role: string; name: string }) {
+    return this.prisma.user.create({ data });
+  }
+
+  async updateUser(id: number, data: { username?: string; password?: string; role?: string; name?: string }) {
+    // ถ้ารหัสผ่านว่างเปล่า (ไม่ได้แก้) ให้ตัดทิ้ง จะได้ไม่อัปเดตทับของเก่า
+    if (!data.password) {
+      delete data.password;
+    }
+    return this.prisma.user.update({ where: { id: id }, data });
+  }
+
+  async deleteUser(id: number) {
+    return this.prisma.user.delete({ where: { id } });
+  }
 }
