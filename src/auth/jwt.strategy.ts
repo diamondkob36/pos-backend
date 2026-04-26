@@ -1,7 +1,7 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config'; // 🌟 นำเข้า
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -9,7 +9,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET'), // 🌟 อ่านจาก .env
+      
+      // 🌟 เติม `as string` ต่อท้าย หรือใส่ `|| 'สำรอง'` ไว้เพื่อการันตีว่าเป็นตัวหนังสือแน่นอน
+      secretOrKey: configService.get<string>('JWT_SECRET') as string, 
+      
     });
   }
 

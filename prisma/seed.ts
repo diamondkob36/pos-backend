@@ -1,39 +1,57 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
-import 'dotenv/config'; // สั่งให้ระบบไปอ่านไฟล์ .env เพื่อดึงรหัสผ่าน
+import 'dotenv/config'; 
 
-// ตั้งค่าการเชื่อมต่อแบบใหม่สำหรับ Prisma 7.5.0+
-const connectionString = `${process.env.DATABASE_URL}`;
+// 1. ตั้งค่าการเชื่อมต่อ (ต้องใช้ Adapter สำหรับ Prisma 7+ ในโปรเจคนี้)
+const connectionString = process.env.DATABASE_URL;
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool as any);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log('กำลังเริ่มหยอดข้อมูล...');
+  console.log('--- เริ่มต้นการ Seed ข้อมูล ---');
 
-  // 1. ล้างข้อมูลเก่าออกก่อน (ถ้ามี) เพื่อป้องกันข้อมูลซ้ำซ้อน
+  // 2. ล้างข้อมูลเก่า (ป้องกัน Relation Error)
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
   await prisma.product.deleteMany();
-  console.log('ล้างข้อมูลเก่าเรียบร้อย');
+  await prisma.topping.deleteMany();
+  await prisma.category.deleteMany();
+  await prisma.user.deleteMany();
+  console.log('✅ ล้างข้อมูลเก่าสำเร็จ');
 
-  // 2. เพิ่มสินค้าเริ่มต้น 4 รายการ
-  await prisma.product.createMany({
+  // 3. สร้างบัญชี Manager: diamondkob36
+  const hashedPassword = await bcrypt.hash('diamondth', 10);
+  await prisma.user.create({
+    data: {
+      username: 'diamondkob36',
+      password: hashedPassword,
+      name: 'ผู้จัดการ',
+      role: 'manager',
+    },
+  });
+  console.log('✅ สร้าง User: diamondkob36 สำเร็จ');
+
+  // 4. เพิ่มหมวดหมู่เริ่มต้น (ป้องกันหน้าบ้านเชื่อมต่อล้มเหลวเพราะไม่มีข้อมูล)
+  await prisma.category.createMany({
     data: [
-      { name: "อเมริกาโน่เย็น", price: 60, image: "https://images.unsplash.com/photo-1559525839-b184a4d698c7?w=500&q=80" },
-      { name: "ชาเขียวมัทฉะ", price: 70, image: "https://images.unsplash.com/photo-1515823662972-da6a2e4d3002?w=500&q=80" },
-      { name: "ครัวซองต์เนยสด", price: 55, image: "https://images.unsplash.com/photo-1549903072-7e6e0d2390eb?w=500&q=80" },
-      { name: "เค้กช็อกโกแลต", price: 85, image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&q=80" },
+      { value: 'coffee', label: 'กาแฟ', hasType: true, hasSize: true },
+      { value: 'bakery', label: 'เบเกอรี่', hasType: false, hasSize: false },
     ],
   });
-  
-  console.log('Seed data success! 🌱');
+  console.log('✅ เพิ่มหมวดหมู่สำเร็จ');
 }
 
 main()
   .catch((e) => {
-    console.error('เกิดข้อผิดพลาด:', e);
+    console.error('❌ Seed Error:', e);
     process.exit(1);
   })
   .finally(async () => {
+    // 🌟 ส่วนสำคัญ: ต้องปิดทั้ง Prisma และ Pool เพื่อไม่ให้ติด Error ตอนจบ
     await prisma.$disconnect();
+    await pool.end(); 
+    console.log('--- 🌱 Seed Success & Connection Closed ---');
   });

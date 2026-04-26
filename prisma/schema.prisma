@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql" // หรือตั้งเป็น "sqlite" ตามที่คุณอนุวรรตน์ใช้งานอยู่ครับ
+  provider = "postgresql"
 }
 
 // --- เริ่มพิมพ์เขียวตาราง ---
