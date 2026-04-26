@@ -7,14 +7,6 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   // ==========================================
-  // 🔓 เส้นทางที่ไม่ต้องล็อกอิน (Public)
-  // ==========================================
-  @Post('login')
-  async login(@Body() body: { username: string; password: string }) {
-    return this.appService.login(body);
-  }
-
-  // ==========================================
   // 🔒 เส้นทางที่ต้องมี Token (Protected)
   // ==========================================
 
@@ -26,8 +18,8 @@ export class AppController {
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Post('products')
-  async createProduct(@Body() body: { name: string; price: number; image: string }) {
+ @Post('products')
+  async createProduct(@Body() body: { name: string; price: number; image: string; category: string }) {
     return this.appService.createProduct(body);
   }
 

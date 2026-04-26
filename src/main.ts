@@ -4,10 +4,12 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  // 🌟 ล็อกให้เฉพาะหน้าบ้านของเราที่ติดต่อเข้ามาได้
+  // 🌟 อัปเดต CORS ให้อนุญาตการส่ง Token
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'], // 🌟 เพิ่ม 127.0.0.1 เผื่อไว้
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
     credentials: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // อนุญาตทุก Methods
+    allowedHeaders: ['Content-Type', 'Accept', 'Authorization'], // 🌟 หัวใจสำคัญ: อนุญาตให้ส่ง Header Authorization ได้
   });
 
   await app.listen(process.env.PORT ?? 3001);

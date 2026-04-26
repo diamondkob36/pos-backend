@@ -152,34 +152,6 @@ export class AppService {
   }
 
   // ==========================================
-  // 🌟 ระบบเข้าสู่ระบบ (Login)
-  // ==========================================
-  async login(data: { username: string; password: string }) {
-    // 💡 ท่าไม้ตาย: ถ้าเพิ่งเปิดระบบครั้งแรก และยังไม่มี User เลย ให้สร้างไอดีพื้นฐานให้ 2 อันอัตโนมัติ
-    const userCount = await this.prisma.user.count();
-    if (userCount === 0) {
-      await this.prisma.user.create({ data: { username: 'diamondkob36', password: 'diamondth', role: 'manager', name: 'ผู้จัดการร้าน' } });
-      await this.prisma.user.create({ data: { username: 'user', password: '123', role: 'cashier', name: 'พนักงานหน้าร้าน' } });
-    }
-
-    // ค้นหาพนักงานจาก username
-    const user = await this.prisma.user.findUnique({
-      where: { username: data.username },
-    });
-
-    // ถ้าไม่เจอ หรือรหัสผิด
-    if (!user || user.password !== data.password) {
-      return { success: false, message: 'รหัสผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง ❌' };
-    }
-
-    // ถ้าผ่าน ส่งข้อมูลพนักงานกลับไป (แต่ไม่ส่งรหัสผ่านกลับไปนะ เพื่อความปลอดภัย)
-    return { 
-      success: true, 
-      user: { id: user.id, username: user.username, role: user.role, name: user.name } 
-    };
-  }
-
-  // ==========================================
   // 🌟 ระบบจัดการพนักงาน (User Management)
   // ==========================================
   async getUsers() {
