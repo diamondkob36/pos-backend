@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AppService {
@@ -189,6 +190,10 @@ export class AppService {
   }
 
   async createUser(data: { username: string; password: string; role: string; name: string }) {
+    // 🌟 เข้ารหัสผ่านก่อนบันทึก
+    if (data.password) {
+      data.password = await bcrypt.hash(data.password, 10);
+    }
     return this.prisma.user.create({ data });
   }
 
@@ -196,6 +201,9 @@ export class AppService {
     // ถ้ารหัสผ่านว่างเปล่า (ไม่ได้แก้) ให้ตัดทิ้ง จะได้ไม่อัปเดตทับของเก่า
     if (!data.password) {
       delete data.password;
+    } else {
+      // 🌟 แต่ถ้ามีการส่งรหัสผ่านใหม่มา ให้เข้ารหัสก่อนบันทึกทับ
+      data.password = await bcrypt.hash(data.password, 10);
     }
     return this.prisma.user.update({ where: { id: id }, data });
   }

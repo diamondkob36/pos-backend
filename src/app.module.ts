@@ -1,12 +1,17 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PrismaService } from './prisma.service'; // <-- 1. นำเข้าตรงนี้
+import { PrismaService } from './prisma.service';
 import { AuthModule } from './auth/auth.module';
 
+
 @Module({
-  imports: [AuthModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }), // 🌟 โหลดไฟล์ .env มาใช้ทั้งโปรเจค
+    AuthModule
+  ],
   controllers: [AppController],
-  providers: [AppService, PrismaService], // <-- 2. เพิ่ม PrismaService เข้าไปที่นี่
+  providers: [AppService, PrismaService],
 })
 export class AppModule {}
