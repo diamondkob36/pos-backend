@@ -73,4 +73,5 @@ model User {
   password String 
   role     String @default("cashier") // สิทธิ์: "manager" หรือ "cashier"
   name     String // ชื่อพนักงานที่แสดงบนหน้าจอ
+  isActive Boolean @default(true)
 }

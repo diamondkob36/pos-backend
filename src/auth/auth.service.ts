@@ -12,6 +12,10 @@ export class AuthService {
 
   async login(username: string, pass: string) {
     const user = await this.prisma.user.findUnique({ where: { username } });
+
+    if (user && user.isActive === false) {
+      throw new UnauthorizedException('บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้จัดการ');
+    }
     
     // 🌟 ใช้ bcrypt.compare เพื่อเปรียบเทียบรหัสที่พิมพ์มา กับรหัสที่ถูกสับไว้ในฐานข้อมูล
     if (user && (await bcrypt.compare(pass, user.password))) {
