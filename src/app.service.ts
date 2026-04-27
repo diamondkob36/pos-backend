@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import * as bcrypt from 'bcrypt';
 
@@ -148,6 +148,24 @@ export class AppService {
   }
 
   async deleteCategory(id: number) {
+    // 1. หาข้อมูลหมวดหมู่ที่จะลบก่อน เพื่อเอาชื่อ (value) ไปค้นหา
+    const categoryToDelete = await this.prisma.category.findUnique({ where: { id } });
+
+    if (!categoryToDelete) {
+      throw new BadRequestException('ไม่พบหมวดหมู่นี้ในระบบ');
+    }
+
+    // 2. นับจำนวนสินค้าทั้งหมดที่กำลังใช้หมวดหมู่นี้อยู่
+    const productCount = await this.prisma.product.count({
+      where: { category: categoryToDelete.value }
+    });
+
+    // 3. ถ้าเจอสินค้าแม้แต่ชิ้นเดียว ให้เตะ Error กลับไปหาหน้าบ้านทันที!
+    if (productCount > 0) {
+      throw new BadRequestException(`ไม่สามารถลบได้! มีสินค้าค้างอยู่ในหมวดหมู่นี้ ${productCount} เมนู กรุณาย้ายสินค้าก่อนครับ`);
+    }
+
+    // 4. ถ้าผ่านด่านข้างบนมาได้ (ไม่มีสินค้าแล้ว) ก็สั่งลบทิ้งได้เลย
     return this.prisma.category.delete({ where: { id } });
   }
 
