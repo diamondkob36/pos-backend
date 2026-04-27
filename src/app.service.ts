@@ -155,9 +155,9 @@ export class AppService {
   // 🌟 ระบบจัดการพนักงาน (User Management)
   // ==========================================
   async getUsers() {
-    // ดึงข้อมูลพนักงานทั้งหมด (แต่ไม่ดึงรหัสผ่านเพื่อความปลอดภัย)
+    // 🌟 เพิ่มการดึงค่า isActive ส่งกลับไปให้หน้าบ้านด้วย
     return this.prisma.user.findMany({
-      select: { id: true, username: true, role: true, name: true }
+      select: { id: true, username: true, role: true, name: true, isActive: true }
     });
   }
 
@@ -169,12 +169,12 @@ export class AppService {
     return this.prisma.user.create({ data });
   }
 
-  async updateUser(id: number, data: { username?: string; password?: string; role?: string; name?: string }) {
+  async updateUser(id: number, data: { username?: string; password?: string; role?: string; name?: string; isActive?: boolean }) {
     // ถ้ารหัสผ่านว่างเปล่า (ไม่ได้แก้) ให้ตัดทิ้ง จะได้ไม่อัปเดตทับของเก่า
     if (!data.password) {
       delete data.password;
     } else {
-      // 🌟 แต่ถ้ามีการส่งรหัสผ่านใหม่มา ให้เข้ารหัสก่อนบันทึกทับ
+      // เข้ารหัสก่อนบันทึกทับ
       data.password = await bcrypt.hash(data.password, 10);
     }
     return this.prisma.user.update({ where: { id: id }, data });
