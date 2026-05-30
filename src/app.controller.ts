@@ -1,117 +1,141 @@
 import { Controller, Get, Post, Body, Put, Delete, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { AppService } from './app.service';
+import { RolesGuard } from './auth/roles.guard';
+import { Roles } from './auth/roles.decorator';
+import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
+import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 
 @Controller()
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  // ==========================================
-  // 🔒 เส้นทางที่ต้องมี Token (Protected)
-  // ==========================================
-
-  // --- จัดการสินค้า (Products) ---
-  @UseGuards(AuthGuard('jwt'))
+  // Products
   @Get('products')
+  @SkipThrottle()
   async getProducts() {
     return this.appService.getProducts();
   }
 
-  @UseGuards(AuthGuard('jwt'))
- @Post('products')
-  async createProduct(@Body() body: { name: string; price: number; image: string; category: string }) {
-    return this.appService.createProduct(body);
+  @Post('products')
+  @Roles('manager', 'supervisor')
+  @Throttle({ short: { ttl: 60000, limit: 20 } })
+  async createProduct(@Body() createProductDto: CreateProductDto) {
+    return this.appService.createProduct(createProductDto);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Put('products/:id')
-  async updateProduct(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
-    return this.appService.updateProduct(id, body);
+  @Roles('manager', 'supervisor')
+  @Throttle({ short: { ttl: 60000, limit: 30 } })
+  async updateProduct(@Param('id', ParseIntPipe) id: number, @Body() updateProductDto: UpdateProductDto) {
+    return this.appService.updateProduct(id, updateProductDto);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Delete('products/:id')
+  @Roles('manager')
+  @Throttle({ short: { ttl: 60000, limit: 10 } })
   async deleteProduct(@Param('id', ParseIntPipe) id: number) {
     return this.appService.deleteProduct(id);
   }
 
-  // --- จัดการบิล/ยอดขาย (Orders) ---
-  @UseGuards(AuthGuard('jwt'))
+  // Orders
   @Post('orders')
+  @Throttle({ short: { ttl: 1000, limit: 5 } })
   async createOrder(@Body() body: { items: any[] }) {
     return this.appService.createOrder(body.items);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Get('orders')
+  @Roles('manager', 'supervisor')
+  @Throttle({ short: { ttl: 10000, limit: 10 } })
   async getOrders() {
     return this.appService.getOrders();
   }
 
-  // --- จัดการท็อปปิ้ง (Toppings) ---
-  @UseGuards(AuthGuard('jwt'))
+  // Toppings
   @Get('toppings')
+  @SkipThrottle()
   getToppings() {
     return this.appService.getToppings();
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Post('toppings')
+  @Roles('manager', 'supervisor')
+  @Throttle({ short: { ttl: 60000, limit: 20 } })
   createTopping(@Body() body: { name: string; price: number; category: string; image?: string }) {
     return this.appService.createTopping(body);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Put('toppings/:id')
+  @Roles('manager', 'supervisor')
+  @Throttle({ short: { ttl: 60000, limit: 30 } })
   updateTopping(@Param('id') id: string, @Body() body: { name?: string; price?: number; category?: string; image?: string }) {
     return this.appService.updateTopping(Number(id), body);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Delete('toppings/:id')
+  @Roles('manager')
+  @Throttle({ short: { ttl: 60000, limit: 10 } })
   deleteTopping(@Param('id') id: string) {
     return this.appService.deleteTopping(Number(id));
   }
 
-  // --- จัดการหมวดหมู่ (Categories) ---
-  @UseGuards(AuthGuard('jwt'))
+  // Categories
   @Get('categories')
+  @SkipThrottle()
   getCategories() {
     return this.appService.getCategories();
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Post('categories')
+  @Roles('manager', 'supervisor')
+  @Throttle({ short: { ttl: 60000, limit: 10 } })
   createCategory(@Body() body: { value: string; label: string; hasType: boolean; hasSize: boolean }) {
     return this.appService.createCategory(body);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Put('categories/:id')
+  @Roles('manager', 'supervisor')
+  @Throttle({ short: { ttl: 60000, limit: 20 } })
   updateCategory(@Param('id') id: string, @Body() body: { value?: string; label?: string; hasType?: boolean; hasSize?: boolean }) {
     return this.appService.updateCategory(Number(id), body);
   }
 
-  @UseGuards(AuthGuard('jwt'))
   @Delete('categories/:id')
+  @Roles('manager')
+  @Throttle({ short: { ttl: 60000, limit: 5 } })
   deleteCategory(@Param('id') id: string) {
     return this.appService.deleteCategory(Number(id));
   }
 
-  // --- จัดการบัญชีพนักงาน (Users) ---
-  @UseGuards(AuthGuard('jwt'))
+  // Users
   @Get('users')
-  getUsers() { return this.appService.getUsers(); }
+  @Roles('manager')
+  @Throttle({ short: { ttl: 10000, limit: 5 } })
+  getUsers() { 
+    return this.appService.getUsers(); 
+  }
 
-  @UseGuards(AuthGuard('jwt'))
   @Post('users')
-  createUser(@Body() body: any) { return this.appService.createUser(body); }
+  @Roles('manager')
+  @Throttle({ short: { ttl: 60000, limit: 5 } })
+  createUser(@Body() createUserDto: CreateUserDto) { 
+    return this.appService.createUser(createUserDto); 
+  }
 
-  @UseGuards(AuthGuard('jwt'))
   @Put('users/:id')
-  updateUser(@Param('id') id: string, @Body() body: any) { return this.appService.updateUser(Number(id), body); }
+  @Roles('manager')
+  @Throttle({ short: { ttl: 60000, limit: 10 } })
+  updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) { 
+    return this.appService.updateUser(Number(id), updateUserDto); 
+  }
 
-  @UseGuards(AuthGuard('jwt'))
   @Delete('users/:id')
-  deleteUser(@Param('id') id: string) { return this.appService.deleteUser(Number(id)); }
+  @Roles('manager')
+  @Throttle({ short: { ttl: 60000, limit: 3 } })
+  deleteUser(@Param('id') id: string) { 
+    return this.appService.deleteUser(Number(id)); 
+  }
 }

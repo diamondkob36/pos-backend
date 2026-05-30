@@ -6,22 +6,18 @@ import * as bcrypt from 'bcrypt';
 export class AppService {
   constructor(private prisma: PrismaService) {}
 
-  // 1. ฟังก์ชันดึงสินค้า (ของเดิม)
   async getProducts() {
     return this.prisma.product.findMany();
   }
 
-  // 2. ฟังก์ชันใหม่! สร้างบิลสั่งซื้อ 🛒
   async createOrder(items: { 
     productId: number; 
     quantity: number; 
     price: number;
-    size?: string;      // 🌟 รับค่าไซส์
-    toppings?: string;  // 🌟 รับค่าท็อปปิ้ง
-    note?: string;      // 🌟 รับค่าคอมเมนต์
+    size?: string;
+    toppings?: string;
+    note?: string;
   }[]) {
-    
-    // ก. คำนวณยอดรวมทั้งหมด (ใช้ price ที่ส่งมาจากหน้าบ้าน เพราะรวมค่าท็อปปิ้งมาแล้ว)
     const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     const startOfDay = new Date();
@@ -38,7 +34,6 @@ export class AppService {
 
     const newDailyNumber = lastOrderToday ? lastOrderToday.dailyNumber + 1 : 1;
 
-    // ข. สั่ง Prisma บันทึกข้อมูล
     const newOrder = await this.prisma.order.create({
       data: {
         dailyNumber: newDailyNumber,
@@ -47,7 +42,7 @@ export class AppService {
           create: items.map((item) => ({
             productId: item.productId,
             quantity: item.quantity,
-            price: item.price,       // 🌟 บันทึกราคาที่บวกท็อปปิ้งแล้ว
+            price: item.price,
             size: item.size || null,
             toppings: item.toppings || null,
             note: item.note || null,
@@ -62,35 +57,30 @@ export class AppService {
   async getOrders() {
     return this.prisma.order.findMany({
       orderBy: {
-        createdAt: 'desc', // เรียงลำดับวันที่ จากใหม่สุด (descending) ไปเก่าสุด
+        createdAt: 'desc',
       },
       include: {
         items: {
           include: {
-            product: true, // ดึงข้อมูลชื่อสินค้า/รูปภาพ จากตาราง Product มาด้วย
+            product: true,
           },
         },
       },
     });
   }
   
-// ==========================================
-  // 🌟 ระบบ Admin: จัดการสินค้า (CRUD)
-  // ==========================================
-
-  // 1. สร้างสินค้าใหม่ (เพิ่ม category)
+  // Products CRUD
   async createProduct(data: { name: string; price: number; image: string; category?: string }) {
     return this.prisma.product.create({
       data: {
         name: data.name,
         price: data.price,
         image: data.image,
-        category: data.category || 'beverage', // ถ้าไม่ส่งมาให้ถือเป็นเครื่องดื่ม
+        category: data.category || 'beverage',
       },
     });
   }
 
-  // 2. แก้ไขสินค้า (เพิ่ม category)
   async updateProduct(id: number, data: { name?: string; price?: number; image?: string; category?: string }) {
     return this.prisma.product.update({
       where: { id: id },
@@ -98,26 +88,21 @@ export class AppService {
     });
   }
 
-  // 3. ลบสินค้า 
   async deleteProduct(id: number) {
     return this.prisma.product.delete({
       where: { id: id },
     });
   }
 
-  // ==========================================
-  // 🌟 ระบบ Admin: จัดการท็อปปิ้ง (Topping CRUD)
-  // ==========================================
+  // Toppings CRUD
   async getToppings() {
     return this.prisma.topping.findMany();
   }
 
-  // 🌟 รองรับ image
   async createTopping(data: { name: string; price: number; category: string; image?: string }) {
     return this.prisma.topping.create({ data });
   }
 
-  // 🌟 เพิ่มฟังก์ชันแก้ไข (Update)
   async updateTopping(id: number, data: { name?: string; price?: number; category?: string; image?: string }) {
     return this.prisma.topping.update({
       where: { id: id },
@@ -129,9 +114,7 @@ export class AppService {
     return this.prisma.topping.delete({ where: { id } });
   }
 
-  // ==========================================
-  // 🌟 ระบบ Admin: จัดการหมวดหมู่ (Category CRUD)
-  // ==========================================
+  // Categories CRUD
   async getCategories() {
     return this.prisma.category.findMany();
   }
@@ -148,39 +131,31 @@ export class AppService {
   }
 
   async deleteCategory(id: number) {
-    // 1. หาข้อมูลหมวดหมู่ที่จะลบก่อน เพื่อเอาชื่อ (value) ไปค้นหา
     const categoryToDelete = await this.prisma.category.findUnique({ where: { id } });
 
     if (!categoryToDelete) {
       throw new BadRequestException('ไม่พบหมวดหมู่นี้ในระบบ');
     }
 
-    // 2. นับจำนวนสินค้าทั้งหมดที่กำลังใช้หมวดหมู่นี้อยู่
     const productCount = await this.prisma.product.count({
       where: { category: categoryToDelete.value }
     });
 
-    // 3. ถ้าเจอสินค้าแม้แต่ชิ้นเดียว ให้เตะ Error กลับไปหาหน้าบ้านทันที!
     if (productCount > 0) {
       throw new BadRequestException(`ไม่สามารถลบได้! มีสินค้าค้างอยู่ในหมวดหมู่นี้ ${productCount} เมนู กรุณาย้ายสินค้าก่อนครับ`);
     }
 
-    // 4. ถ้าผ่านด่านข้างบนมาได้ (ไม่มีสินค้าแล้ว) ก็สั่งลบทิ้งได้เลย
     return this.prisma.category.delete({ where: { id } });
   }
 
-  // ==========================================
-  // 🌟 ระบบจัดการพนักงาน (User Management)
-  // ==========================================
+  // Users CRUD
   async getUsers() {
-    // 🌟 เพิ่มการดึงค่า isActive ส่งกลับไปให้หน้าบ้านด้วย
     return this.prisma.user.findMany({
       select: { id: true, username: true, role: true, name: true, isActive: true }
     });
   }
 
   async createUser(data: { username: string; password: string; role: string; name: string }) {
-    // 🌟 เข้ารหัสผ่านก่อนบันทึก
     if (data.password) {
       data.password = await bcrypt.hash(data.password, 10);
     }
@@ -188,11 +163,9 @@ export class AppService {
   }
 
   async updateUser(id: number, data: { username?: string; password?: string; role?: string; name?: string; isActive?: boolean }) {
-    // ถ้ารหัสผ่านว่างเปล่า (ไม่ได้แก้) ให้ตัดทิ้ง จะได้ไม่อัปเดตทับของเก่า
     if (!data.password) {
       delete data.password;
     } else {
-      // เข้ารหัสก่อนบันทึกทับ
       data.password = await bcrypt.hash(data.password, 10);
     }
     return this.prisma.user.update({ where: { id: id }, data });
