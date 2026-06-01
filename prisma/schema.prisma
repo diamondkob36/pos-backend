@@ -13,7 +13,7 @@ model Product {
   id          Int         @id @default(autoincrement())
   name        String
   price       Float
-  image       String
+  image       String?
   category    String      @default("") 
   isActive    Boolean     @default(true)
   isAvailable Boolean     @default(true)

@@ -70,18 +70,20 @@ export class AppService {
   }
   
   // Products CRUD
-  async createProduct(data: { name: string; price: number; image: string; category?: string }) {
+  async createProduct(data: { name: string; price: number; image?: string; category?: string; isAvailable?: boolean; isActive?: boolean }) {
     return this.prisma.product.create({
       data: {
         name: data.name,
         price: data.price,
-        image: data.image,
+        image: data.image || null,
         category: data.category || 'beverage',
+        isAvailable: data.isAvailable !== undefined ? data.isAvailable : true,
+        isActive: data.isActive !== undefined ? data.isActive : true,
       },
     });
   }
 
-  async updateProduct(id: number, data: { name?: string; price?: number; image?: string; category?: string }) {
+  async updateProduct(id: number, data: { name?: string; price?: number; image?: string; category?: string; isAvailable?: boolean; isActive?: boolean }) {
     return this.prisma.product.update({
       where: { id: id },
       data: data,
@@ -99,11 +101,20 @@ export class AppService {
     return this.prisma.topping.findMany();
   }
 
-  async createTopping(data: { name: string; price: number; category: string; image?: string }) {
-    return this.prisma.topping.create({ data });
+  async createTopping(data: { name: string; price: number; category: string; image?: string; isAvailable?: boolean; isActive?: boolean }) {
+    return this.prisma.topping.create({ 
+      data: {
+        name: data.name,
+        price: data.price,
+        category: data.category,
+        image: data.image || null,
+        isAvailable: data.isAvailable !== undefined ? data.isAvailable : true,
+        isActive: data.isActive !== undefined ? data.isActive : true,
+      }
+    });
   }
 
-  async updateTopping(id: number, data: { name?: string; price?: number; category?: string; image?: string }) {
+  async updateTopping(id: number, data: { name?: string; price?: number; category?: string; image?: string; isAvailable?: boolean; isActive?: boolean }) {
     return this.prisma.topping.update({
       where: { id: id },
       data: data,
@@ -163,7 +174,8 @@ export class AppService {
   }
 
   async updateUser(id: number, data: { username?: string; password?: string; role?: string; name?: string; isActive?: boolean }) {
-    if (!data.password) {
+    // ถ้าไม่มี password หรือเป็นค่าว่าง ให้ลบออกจาก data
+    if (!data.password || data.password.trim() === '') {
       delete data.password;
     } else {
       data.password = await bcrypt.hash(data.password, 10);

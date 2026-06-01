@@ -10,12 +10,20 @@ export class CreateProductDto {
   price: number;
 
   @IsString()
-  @IsNotEmpty({ message: 'กรุณาระบุรูปภาพ' })
-  image: string;
+  @IsOptional()
+  image?: string;
 
   @IsString()
   @IsOptional()
   category?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isAvailable?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }
 
 export class UpdateProductDto {

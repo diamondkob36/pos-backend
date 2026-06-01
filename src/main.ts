@@ -1,9 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  
+  // Enable global exception filter
+  app.useGlobalFilters(new HttpExceptionFilter());
   
   // Enable global validation
   app.useGlobalPipes(new ValidationPipe({
@@ -18,6 +22,7 @@ async function bootstrap() {
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
+    exposedHeaders: ['X-Token-Expired'], // เพิ่ม header สำหรับบอก token หมดอายุ
   });
 
   await app.listen(process.env.PORT ?? 3001);

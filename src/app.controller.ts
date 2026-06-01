@@ -64,14 +64,14 @@ export class AppController {
   @Post('toppings')
   @Roles('manager', 'supervisor')
   @Throttle({ short: { ttl: 60000, limit: 20 } })
-  createTopping(@Body() body: { name: string; price: number; category: string; image?: string }) {
+  createTopping(@Body() body: { name: string; price: number; category: string; image?: string; isAvailable?: boolean; isActive?: boolean }) {
     return this.appService.createTopping(body);
   }
 
   @Put('toppings/:id')
   @Roles('manager', 'supervisor')
   @Throttle({ short: { ttl: 60000, limit: 30 } })
-  updateTopping(@Param('id') id: string, @Body() body: { name?: string; price?: number; category?: string; image?: string }) {
+  updateTopping(@Param('id') id: string, @Body() body: { name?: string; price?: number; category?: string; image?: string; isAvailable?: boolean; isActive?: boolean }) {
     return this.appService.updateTopping(Number(id), body);
   }
 
