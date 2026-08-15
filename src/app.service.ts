@@ -75,7 +75,7 @@ export class AppService {
       data: {
         name: data.name,
         price: data.price,
-        image: data.image || null,
+        image: data.image || undefined,
         category: data.category || 'beverage',
         isAvailable: data.isAvailable !== undefined ? data.isAvailable : true,
         isActive: data.isActive !== undefined ? data.isActive : true,
